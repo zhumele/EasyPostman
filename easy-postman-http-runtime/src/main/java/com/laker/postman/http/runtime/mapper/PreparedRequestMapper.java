@@ -36,9 +36,9 @@ public class PreparedRequestMapper {
         req.id = effectiveItem.getId();
         req.name = effectiveItem.getName();
         req.method = effectiveItem.getMethod();
-        req.body = effectiveItem.getBody();
+        req.body = resolve(variableResolver, effectiveItem.getBody());
         req.bodyType = effectiveItem.getBodyType();
-        req.url = buildRawUrlWithParams(effectiveItem);
+        req.url = buildRawUrlWithParams(effectiveItem, variableResolver);
         req.isMultipart = checkIsMultipart(effectiveItem.getFormDataList());
         req.followRedirects = HttpRequestRuntimeSettingsResolver.resolveFollowRedirects(effectiveItem);
         req.cookieJarEnabled = HttpRequestRuntimeSettingsResolver.resolveCookieJarEnabled(effectiveItem);
@@ -48,11 +48,11 @@ public class PreparedRequestMapper {
         req.requestTimeoutMs = HttpRequestRuntimeSettingsResolver.resolveRequestTimeoutMs(effectiveItem);
         req.webSocketPingIntervalMs = HttpRequestRuntimeSettingsResolver.resolveWebSocketPingIntervalMs(effectiveItem);
         req.transportAuth = createTransportAuth(effectiveItem);
-        req.headersList = cloneHeaders(buildHeadersListWithResolvedAuth(effectiveItem, variableResolver));
-        req.formDataList = cloneFormData(effectiveItem.getFormDataList());
-        req.urlencodedList = cloneUrlencoded(effectiveItem.getUrlencodedList());
-        req.pathVariablesList = cloneParams(effectiveItem.getPathVariablesList());
-        req.paramsList = cloneParams(buildParamsListWithResolvedAuth(effectiveItem, variableResolver));
+        req.headersList = cloneHeadersWithVariables(effectiveItem.getHeadersList(), variableResolver);
+        req.formDataList = cloneFormDataWithVariables(effectiveItem.getFormDataList(), variableResolver);
+        req.urlencodedList = cloneUrlencodedWithVariables(effectiveItem.getUrlencodedList(), variableResolver);
+        req.pathVariablesList = cloneParamsWithVariables(effectiveItem.getPathVariablesList(), variableResolver);
+        req.paramsList = cloneParamsWithVariables(effectiveItem.getParamsList(), variableResolver);
         req.prescript = effectiveItem.getPrescript();
         req.postscript = effectiveItem.getPostscript();
         return req;
@@ -82,8 +82,8 @@ public class PreparedRequestMapper {
         return new TransportAuth(item.getAuthType(), item.getAuthUsername(), item.getAuthPassword());
     }
 
-    private static String buildRawUrlWithParams(HttpRequestItem item) {
-        String url = item.getUrl();
+    private static String buildRawUrlWithParams(HttpRequestItem item, Function<String, String> variableResolver) {
+        String url = resolve(variableResolver, item.getUrl());
         if (item.getParamsList() == null || item.getParamsList().isEmpty()) {
             return url;
         }
@@ -94,12 +94,12 @@ public class PreparedRequestMapper {
         StringBuilder sb = new StringBuilder(url != null ? url : "");
         for (HttpParam param : item.getParamsList()) {
             if (!param.isEnabled()) continue;
-            String key = param.getKey();
+            String key = resolve(variableResolver, param.getKey());
             if (key == null || key.isEmpty()) continue;
             if (existingKeys.contains(key)) continue;
             sb.append(hasQuery ? "&" : "?");
             hasQuery = true;
-            sb.append(key).append("=").append(param.getValue() != null ? param.getValue() : "");
+            sb.append(key).append("=").append(resolve(variableResolver, param.getValue()) != null ? resolve(variableResolver, param.getValue()) : "");
         }
         return sb.toString();
     }
@@ -334,6 +334,21 @@ public class PreparedRequestMapper {
         return cloned;
     }
 
+    private static List<HttpHeader> cloneHeadersWithVariables(List<HttpHeader> list, Function<String, String> variableResolver) {
+        if (list == null) {
+            return null;
+        }
+        List<HttpHeader> cloned = new ArrayList<>(list.size());
+        for (HttpHeader item : list) {
+            if (item == null) {
+                cloned.add(null);
+            } else {
+                cloned.add(new HttpHeader(item.isEnabled(), item.getKey(), resolve(variableResolver, item.getValue()), item.getDescription()));
+            }
+        }
+        return cloned;
+    }
+
     private static List<HttpFormData> cloneFormData(List<HttpFormData> list) {
         if (list == null) {
             return null;
@@ -347,6 +362,27 @@ public class PreparedRequestMapper {
                     item.getValue(),
                     item.getDescription()
             ));
+        }
+        return cloned;
+    }
+
+    private static List<HttpFormData> cloneFormDataWithVariables(List<HttpFormData> list, Function<String, String> variableResolver) {
+        if (list == null) {
+            return null;
+        }
+        List<HttpFormData> cloned = new ArrayList<>(list.size());
+        for (HttpFormData item : list) {
+            if (item == null) {
+                cloned.add(null);
+            } else {
+                cloned.add(new HttpFormData(
+                        item.isEnabled(),
+                        item.getKey(),
+                        item.getType(),
+                        resolve(variableResolver, item.getValue()),
+                        item.getDescription()
+                ));
+            }
         }
         return cloned;
     }
@@ -367,6 +403,26 @@ public class PreparedRequestMapper {
         return cloned;
     }
 
+    private static List<HttpFormUrlencoded> cloneUrlencodedWithVariables(List<HttpFormUrlencoded> list, Function<String, String> variableResolver) {
+        if (list == null) {
+            return null;
+        }
+        List<HttpFormUrlencoded> cloned = new ArrayList<>(list.size());
+        for (HttpFormUrlencoded item : list) {
+            if (item == null) {
+                cloned.add(null);
+            } else {
+                cloned.add(new HttpFormUrlencoded(
+                        item.isEnabled(),
+                        item.getKey(),
+                        resolve(variableResolver, item.getValue()),
+                        item.getDescription()
+                ));
+            }
+        }
+        return cloned;
+    }
+
     private static List<HttpParam> cloneParams(List<HttpParam> list) {
         if (list == null) {
             return null;
@@ -374,6 +430,21 @@ public class PreparedRequestMapper {
         List<HttpParam> cloned = new ArrayList<>(list.size());
         for (HttpParam item : list) {
             cloned.add(item == null ? null : new HttpParam(item.isEnabled(), item.getKey(), item.getValue(), item.getDescription()));
+        }
+        return cloned;
+    }
+
+    private static List<HttpParam> cloneParamsWithVariables(List<HttpParam> list, Function<String, String> variableResolver) {
+        if (list == null) {
+            return null;
+        }
+        List<HttpParam> cloned = new ArrayList<>(list.size());
+        for (HttpParam item : list) {
+            if (item == null) {
+                cloned.add(null);
+            } else {
+                cloned.add(new HttpParam(item.isEnabled(), item.getKey(), resolve(variableResolver, item.getValue()), item.getDescription()));
+            }
         }
         return cloned;
     }

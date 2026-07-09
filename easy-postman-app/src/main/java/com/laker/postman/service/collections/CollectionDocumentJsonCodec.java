@@ -39,8 +39,13 @@ public class CollectionDocumentJsonCodec {
             return array;
         }
         for (CollectionNode node : document.getRoots()) {
-            if (node != null && node.isGroup()) {
+            if (node == null) {
+                continue;
+            }
+            if (node.isGroup()) {
                 array.add(toGroupJson(node));
+            } else if (node.isRequest()) {
+                array.add(toRequestJson(node.asRequest()));
             }
         }
         return array;
@@ -50,11 +55,18 @@ public class CollectionDocumentJsonCodec {
         if (array == null) {
             return CollectionDocument.empty();
         }
-        List<CollectionNode> roots = array.stream()
-                .filter(JSONObject.class::isInstance)
-                .map(JSONObject.class::cast)
-                .map(CollectionDocumentJsonCodec::fromGroupJson)
-                .toList();
+        List<CollectionNode> roots = new java.util.ArrayList<>();
+        for (Object obj : array) {
+            if (!(obj instanceof JSONObject json)) {
+                continue;
+            }
+            String type = json.getStr("type");
+            if ("group".equals(type)) {
+                roots.add(fromGroupJson(json));
+            } else if ("request".equals(type)) {
+                roots.add(fromRequestJson(json));
+            }
+        }
         return new CollectionDocument(roots);
     }
 
