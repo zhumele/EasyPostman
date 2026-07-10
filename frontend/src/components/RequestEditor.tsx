@@ -838,16 +838,14 @@ export default function RequestEditor({ request, onRequestChange, layoutMode, va
     if (!response) return <div className="p-4 text-gray-400 text-sm">暂无响应</div>;
     const formatted = formatBody(response.body, response.contentType);
     const language = detectLanguage(response.contentType, '');
-    const highlighted = useMemo(() => {
-      if (language === 'plaintext') {
-        return formatted;
-      }
+    let highlighted = formatted;
+    if (language !== 'plaintext') {
       try {
-        return hljs.highlight(formatted, { language }).value;
+        highlighted = hljs.highlight(formatted, { language }).value;
       } catch {
-        return formatted;
+        highlighted = formatted;
       }
-    }, [formatted, language]);
+    }
 
     return (
       <div className="relative h-full">
