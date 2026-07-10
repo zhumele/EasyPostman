@@ -24,7 +24,9 @@ temp/
 /.superpowers/
 /.playwright-mcp/
 /docs/superpowers/
-build/
+build/downloads/
+build/stage/
+build/easy-postman-web-*.zip
 data/
 web-dist/
 frontend/node_modules/
@@ -33,3 +35,4 @@ frontend/.next/
 *.zip
 *.tar.gz
 *.tar
+*.tsbuildinfo
