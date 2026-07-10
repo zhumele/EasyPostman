@@ -43,9 +43,11 @@
 
 EasyPostman 的核心亮点是把**高仿 Postman 的接口调试体验**和**JMeter 风格性能测试能力**放到一个本地优先的桌面应用里。项目基于 Java 17、Swing 和 FlatLaf 构建，默认把数据保存在本地；当团队需要同步、评审和版本控制时，可以通过 Git 工作区协作，不依赖托管云服务。
 
-| 🎯 高仿 Postman 调试 | ⚡ JMeter 风格压测 | 🔒 本地优先桌面端 |
-|:---:|:---:|:---:|
-| 集合、环境、认证、脚本、导入、历史和响应查看 | 线程组、定时器、提取器、断言、实时指标、报告和分布式执行 | 除非主动选择 Git 工作区，否则接口和测试数据只保存在本机 |
+**全新 Web 版本！** 现提供可部署在内网服务器上的浏览器版本，支持团队协作，无需每位成员单独安装桌面应用。
+
+| 🎯 高仿 Postman 调试 | ⚡ JMeter 风格压测 | 🔒 本地优先桌面端 | 🌐 Web 版本 |
+|:---:|:---:|:---:|:---:|
+| 集合、环境、认证、脚本、导入、历史和响应查看 | 线程组、定时器、提取器、断言、实时指标、报告和分布式执行 | 除非主动选择 Git 工作区，否则接口和测试数据只保存在本机 | 部署在内网 Linux 服务器上，供团队统一访问
 
 ---
 
@@ -123,6 +125,105 @@ EasyPostman 是 GUI 优先的桌面工具，项目价值要同时展示两条主
 - **跨平台** - Windows、macOS、Linux
 
 📖 **[查看所有功能 →](docs/FEATURES_zh.md)**
+
+---
+
+## 🌐 Web 版本（自托管部署）
+
+Web 版本允许您将 EasyPostman 部署在内网 Linux 服务器上，为整个团队提供浏览器方式的 API 调试，无需安装桌面应用。
+
+### 功能特性
+
+- **浏览器访问** - 无需安装桌面应用
+- **团队协作** - 共享工作区和集合
+- **内网部署** - 数据保留在您的服务器上
+- **离线可用** - 部署后无需互联网
+- **语法高亮** - JSON/XML/Markdown 自定义颜色高亮
+- **变量高亮** - `{{variable}}` 语法高亮，悬浮显示变量值
+- **OpenAPI 导入** - 支持 OpenAPI 3.x 规范导入
+- **历史记录** - 完整的请求/响应历史和事件时间线
+
+### 在 Linux 服务器上编译打包部署
+
+#### 1. 编译打包部署包
+
+在具备构建工具的机器上（Windows/Linux，需有 Maven 和 Node.js）：
+
+```bash
+# 克隆仓库
+git clone https://github.com/lakernote/easy-postman.git
+cd easy-postman
+
+# 构建前端
+cd frontend
+npm install
+npm run build
+cd ..
+
+# 构建后端
+mvn -pl easy-postman-web -am -DskipTests clean package
+
+# 创建部署包（Windows 上需要 PowerShell）
+pwsh -File build/package-linux.ps1
+```
+
+脚本生成 `dist/EasyPostman-{版本号}-linux-x64.tar.gz`，包含：
+- `lib/easy-postman-web-{版本号}.jar` - 后端应用
+- `web-dist/` - 前端静态文件
+- `runtime/` - 内嵌 JRE（Temurin 21）
+- `start.sh`、`stop.sh`、`status.sh` - 管理脚本
+
+#### 2. 在目标服务器上部署
+
+将压缩包上传到 Linux 服务器：
+
+```bash
+# 解压
+tar -xzf EasyPostman-6.0.12-linux-x64.tar.gz
+cd EasyPostman
+
+# 设置脚本可执行权限
+chmod +x *.sh
+
+# 启动服务
+./start.sh
+
+# 查看状态
+./status.sh
+
+# 停止服务
+./stop.sh
+```
+
+#### 3. 访问 Web 界面
+
+打开浏览器访问：`http://服务器IP:18080`
+
+### 目录结构
+
+```
+EasyPostman/
+├── lib/
+│   └── easy-postman-web-{版本号}.jar    # 后端 JAR
+├── web-dist/                              # 前端静态文件
+│   ├── index.html
+│   └── assets/
+├── runtime/                               # 内嵌 JRE
+│   └── bin/java
+├── logs/                                  # 应用日志
+│   └── easy-postman-web.log
+├── data/                                  # 工作区数据（自动创建）
+├── start.sh                               # 启动脚本
+├── stop.sh                                # 停止脚本
+└── status.sh                              # 状态检查脚本
+```
+
+### 注意事项
+
+- **端口**：默认为 `18080`，可在 `start.sh` 中修改
+- **数据位置**：`./data/` 目录（相对于应用主目录）
+- **请求执行**：HTTP 请求由**服务器**发起，而非浏览器
+- **`localhost` URL**：解析为服务器主机，而非浏览器所在机器
 
 ---
 

@@ -43,9 +43,11 @@
 
 EasyPostman combines a **Postman-style API debugging workspace** with **JMeter-style performance testing** in one local-first desktop app. It is built with Java 17, Swing, and FlatLaf, stores data locally by default, and uses Git workspaces when teams need sync, review, and version control without a hosted cloud service.
 
-| 🎯 Postman-style Debugging | ⚡ JMeter-style Load Testing | 🔒 Local-first Desktop |
-|:---:|:---:|:---:|
-| Collections, environments, auth, scripts, imports, history, and response inspection | Thread groups, timers, extractors, assertions, realtime metrics, reports, and distributed runs | Your API and test data stay on disk unless you choose a Git workspace |
+**New: Web Version Available!** A browser-based version is now available for deployment on internal servers, enabling team collaboration without individual desktop installations.
+
+| 🎯 Postman-style Debugging | ⚡ JMeter-style Load Testing | 🔒 Local-first Desktop | 🌐 Web Version |
+|:---:|:---:|:---:|:---:|
+| Collections, environments, auth, scripts, imports, history, and response inspection | Thread groups, timers, extractors, assertions, realtime metrics, reports, and distributed runs | Your API and test data stay on disk unless you choose a Git workspace | Deploy on internal Linux servers for team-wide access
 
 ---
 
@@ -123,6 +125,105 @@ EasyPostman is a GUI-first tool, and the project value is easier to judge when b
 - **Cross-platform** - Windows, macOS, Linux
 
 📖 **[View All Features →](docs/FEATURES.md)**
+
+---
+
+## 🌐 Web Version (Self-hosted)
+
+The Web version allows you to deploy EasyPostman on your internal Linux server, providing browser-based API debugging for your entire team without requiring desktop installations.
+
+### Features
+
+- **Browser-based access** - No desktop app installation required
+- **Team collaboration** - Shared workspaces and collections
+- **Internal deployment** - Data stays on your servers
+- **Offline capable** - No internet required after deployment
+- **Syntax highlighting** - JSON/XML/Markdown with custom colors
+- **Variable highlighting** - `{{variable}}` syntax with hover tooltips
+- **OpenAPI import** - Import OpenAPI 3.x specifications
+- **History tracking** - Full request/response history with timeline
+
+### Build & Deploy on Linux Server
+
+#### 1. Build the Deployment Package
+
+On a machine with build tools (Windows/Linux with Maven and Node.js):
+
+```bash
+# Clone the repository
+git clone https://github.com/lakernote/easy-postman.git
+cd easy-postman
+
+# Build frontend
+cd frontend
+npm install
+npm run build
+cd ..
+
+# Build backend
+mvn -pl easy-postman-web -am -DskipTests clean package
+
+# Create deployment package (requires PowerShell on Windows)
+pwsh -File build/package-linux.ps1
+```
+
+The script produces `dist/EasyPostman-{version}-linux-x64.tar.gz` containing:
+- `lib/easy-postman-web-{version}.jar` - Backend application
+- `web-dist/` - Frontend static files
+- `runtime/` - Embedded JRE (Temurin 21)
+- `start.sh`, `stop.sh`, `status.sh` - Management scripts
+
+#### 2. Deploy on Target Server
+
+Upload the tarball to your Linux server:
+
+```bash
+# Extract
+tar -xzf EasyPostman-6.0.12-linux-x64.tar.gz
+cd EasyPostman
+
+# Make scripts executable
+chmod +x *.sh
+
+# Start the service
+./start.sh
+
+# Check status
+./status.sh
+
+# Stop the service
+./stop.sh
+```
+
+#### 3. Access the Web Interface
+
+Open browser and navigate to: `http://your-server-ip:18080`
+
+### Directory Structure
+
+```
+EasyPostman/
+├── lib/
+│   └── easy-postman-web-{version}.jar    # Backend JAR
+├── web-dist/                              # Frontend static files
+│   ├── index.html
+│   └── assets/
+├── runtime/                               # Embedded JRE
+│   └── bin/java
+├── logs/                                  # Application logs
+│   └── easy-postman-web.log
+├── data/                                  # Workspace data (auto-created)
+├── start.sh                               # Start script
+├── stop.sh                                # Stop script
+└── status.sh                              # Status check script
+```
+
+### Notes
+
+- **Port**: Default is `18080`, configurable via `start.sh`
+- **Data location**: `./data/` directory (relative to app home)
+- **Request execution**: HTTP requests are sent from the **server**, not the browser
+- **`localhost` URLs**: Resolve to the server host, not the browser's machine
 
 ---
 
