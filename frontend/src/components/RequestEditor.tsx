@@ -856,7 +856,7 @@ export default function RequestEditor({ request, onRequestChange, layoutMode, va
             message.success('已复制');
           }}>复制</Button>
         </div>
-        <pre className="response-body-pre overflow-auto h-[calc(100%-44px)]">
+        <pre className="response-body-pre">
           {language === 'plaintext' ? formatted : <span dangerouslySetInnerHTML={{ __html: highlighted }} />}
         </pre>
       </div>
@@ -979,13 +979,13 @@ export default function RequestEditor({ request, onRequestChange, layoutMode, va
           )}
 
           {/* Response Tabs */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-hidden response-tabs">
             <Tabs
               activeKey={respTab}
               onChange={setRespTab}
               items={responseTabItems}
               size="small"
-              className="px-3"
+              className="px-3 h-full"
             />
           </div>
         </div>

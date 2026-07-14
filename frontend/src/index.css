@@ -68,6 +68,21 @@ html, body, #root {
   overflow: auto;
 }
 
+/* ===== 响应 Tabs 内容区域占满剩余高度，使响应体可滚动 ===== */
+.response-tabs .ant-tabs {
+  height: 100%;
+}
+.response-tabs .ant-tabs-content-holder {
+  height: 100%;
+  overflow: auto;
+}
+.response-tabs .ant-tabs-content {
+  height: 100%;
+}
+.response-tabs .ant-tabs-tabpane {
+  height: 100%;
+}
+
 /* ===== TabRail 侧边栏 ===== */
 .tab-rail-item {
   display: flex;
